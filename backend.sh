@@ -1,58 +1,70 @@
 source common.sh
 
+mysql_root_password=$1
+
+if [ -z "${mysql_root_password}" ]; then
+  echo Input password is missing
+  exit 1
+fi
+
 Print_Task_Heading "Disable default NodeJS version module"
-dnf module disable nodejs -y &>> /tmp/expense.log # output gets appended to the existing
-echo $?
+dnf module disable nodejs -y &>>$LOG # output gets appended to the existing
+Check_Status $?
 
 Print_Task_Heading "Enable NodeJS module"
-dnf module enable nodejs:20 -y &>> /tmp/expense.log
-echo $?
+dnf module enable nodejs:20 -y &>>$LOG
+Check_Status $?
 
 Print_Task_Heading "Install NodeJS"
-dnf install nodejs -y
-echo $?
+dnf install nodejs -y &>>$LOG
+Check_Status $?
 
 Print_Task_Heading "Copy Backend Service"
-cp backend.service /etc/systemd/system/backend.service
-echo $?
+cp backend.service /etc/systemd/system/backend.service &>>$LOG
+Check_Status $?
 
 Print_Task_Heading "Adding Application User"
-useradd expense
-echo $?
+if [ -z "$id" ]; then
+  echo User already exists
+  exit 9
+else
+  useradd expense
+fi
+Check_Status $?
 
 Print_Task_Heading "Remove Old App Content"
-rm -rf /app
-echo $?
+rm -rf /app &>>$LOG
+Check_Status $?
 
 Print_Task_Heading "App Directory"
-mkdir /app
-echo $?
+mkdir /app &>>$LOG
+Check_Status $?
 
 Print_Task_Heading "Download App Content"
-curl -o /tmp/backend.zip https://expense-artifacts.s3.amazonaws.com/expense-backend-v2.zip
-echo $?
+curl -o /tmp/backend.zip https://expense-artifacts.s3.amazonaws.com/expense-backend-v2.zip &>>$LOG
+Check_Status $?
 
 Print_Task_Heading "Extract App Content"
 cd /app
-unzip /tmp/backend.zip
-echo $?
+unzip /tmp/backend.zip &>>$LOG
+Check_Status $?
 
 Print_Task_Heading "Install NodeJS dependencies"
 cd /app
-npm install
-echo $?
+npm install &>>$LOG
+Check_Status $?
 
-systemctl daemon-reload
+systemctl daemon-reload &>>$LOG
 
 Print_Task_Heading "Enable backend service"
-systemctl enable backend
-systemctl start backend
-echo $?
+systemctl enable backend &>>$LOG
+systemctl start backend &>>$LOG
+Check_Status $?
 
 Print_Task_Heading "Install MYSQL Client"
-dnf install mysql -y
-echo $?
+dnf install mysql -y &>>$LOG
+Check_Status $?
 
 Print_Task_Heading "Load Schema"
-mysql -h 172.16.17.18 -uroot -pExpenseApp@1 < /app/schema/backend.sql
-echo $?
+mysql -h 172.16.17.18 -uroot -p${mysql_root_password} < /app/schema/backend.sql &>>$LOG
+Check_Status $?
