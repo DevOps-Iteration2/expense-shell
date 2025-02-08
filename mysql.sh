@@ -1,6 +1,10 @@
 source common.sh
 mysql_root_password=$1
 
+if [ -z "${mysql_root_password}" ]; then
+  echo Input password is missing
+fi
+
 Print_Task_Heading "Install MYSQL Server"
 dnf install mysql-server -y &>>$LOG
 Check_Status $?
