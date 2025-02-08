@@ -24,11 +24,9 @@ cp backend.service /etc/systemd/system/backend.service &>>$LOG
 Check_Status $?
 
 Print_Task_Heading "Adding Application User"
-if [ -z "$id" ]; then
-  echo User already exists
-  exit 9
-else
-  useradd expense
+id expense
+if [ $? -ne 0 ]; then
+  useradd expense &>>$LOG
 fi
 Check_Status $?
 
